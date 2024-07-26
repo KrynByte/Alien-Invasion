@@ -19,7 +19,7 @@ def run_sim():
     balls = Group()
 
     # Create Ball objects and add it to the group
-    for i in range(0,16):
+    for i in range(0,sim_settings.amount):
         ball = Ball(sim_settings, screen, i)
         balls.add(ball)
 
@@ -33,7 +33,7 @@ def run_sim():
                 running = False
 
         # Update all balls in the group
-        dt = clock.tick(fps) / 100.0  # deltaTime in seconds
+        dt = clock.tick(fps) / sim_settings.speed  # deltaTime in seconds
         for ball in balls:
             ball.update(dt, sim_settings, balls)
 
