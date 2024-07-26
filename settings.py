@@ -11,4 +11,4 @@ class Settings():
         # Ball settings.
         self.ball_color = (255, 255, 255)
         self.ball_radius = 10
-        self.start_position = [100, 100]
+        self.start_position = [100, 600]

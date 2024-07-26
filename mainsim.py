@@ -19,8 +19,8 @@ def run_sim():
     balls = Group()
 
     # Create Ball objects and add it to the group
-    for i in range(0,10):
-        ball = Ball(sim_settings, screen)
+    for i in range(0,16):
+        ball = Ball(sim_settings, screen, i)
         balls.add(ball)
 
     clock = pygame.time.Clock()
