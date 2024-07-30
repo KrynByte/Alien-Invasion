@@ -19,7 +19,7 @@ def run_sim():
     balls = Group()
 
     # Create Ball objects and add it to the group
-    for i in range(0,sim_settings.amount):
+    for i in range(0, sim_settings.amount):
         ball = Ball(sim_settings, screen, i)
         balls.add(ball)
 
@@ -48,5 +48,30 @@ def run_sim():
     pygame.quit()
     sys.exit()
 
+
+def step(dt, sim_settings, particles):
+    # Apply Gravity
+    for particle in particles:
+        particle.velocity += sim_settings.gravity * dt
+        particle.prediction = particle.position + particle.velocity * dt
+
+    # Calculate density
+    for particle in particles:
+        particle.density = calcdensity(particle.prediction)
+
+    # Calculate and apply pressure
+    for particle in particles:
+        particle.pressureF = calcpressureforce(particle)
+        particle.pressureA = particle.pressureF / particle.density
+        particle.velocity += particle.pressureA * dt
+
+    # Collisions
+    for particle in particles:
+        particle.position +=velocity
+
+def smoothingker(radius, distance):
+
+# Update the rect position
+self.rect.center = (self.x, self.y)
 
 run_sim()
