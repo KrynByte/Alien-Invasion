@@ -1,9 +1,5 @@
 class Settings():
-    """A class to store all settings for Alien Invasion."""
-
     def __init__(self):
-        """Initialize the game's settings."""
-
         # Screen settings.
         self.screen_width = 600
         self.screen_height = 600
@@ -16,3 +12,6 @@ class Settings():
         self.ball_color = (255, 255, 255)
         self.ball_radius = 5
         self.start_position = [10, 10]
+        self.smoothingRadius = 100
+        self.targetDensity = 5
+        self.pressureMultiplier = 10

@@ -1,9 +1,11 @@
 import pygame
+import math
+import random
 import sys
 from pygame.sprite import Group
 
 from settings import Settings
-from ball import Ball
+from ball import Particle
 
 
 def run_sim():
@@ -20,7 +22,7 @@ def run_sim():
 
     # Create Ball objects and add it to the group
     for i in range(0, sim_settings.amount):
-        ball = Ball(sim_settings, screen, i)
+        ball = Particle(sim_settings, screen, i)
         balls.add(ball)
 
     clock = pygame.time.Clock()
@@ -34,8 +36,9 @@ def run_sim():
 
         # Update all balls in the group
         dt = clock.tick(fps) / sim_settings.speed  # deltaTime in seconds
+        step(dt, balls, sim_settings)
         for ball in balls:
-            ball.update(dt, sim_settings, balls)
+            ball.update()
 
         # Draw the screen with the background color
         screen.fill(bg_color)
@@ -49,29 +52,91 @@ def run_sim():
     sys.exit()
 
 
-def step(dt, sim_settings, particles):
+def step(dt, particles, sim_settings):
     # Apply Gravity
     for particle in particles:
-        particle.velocity += sim_settings.gravity * dt
-        particle.prediction = particle.position + particle.velocity * dt
+        particle.velocity += [x * dt for x in sim_settings.gravity]
+        particle.prediction = particle.position + [x * dt for x in particle.velocity]
 
     # Calculate density
     for particle in particles:
-        particle.density = calcdensity(particle.prediction)
+        particle.density = calcDensity(particle, particles, sim_settings)
 
     # Calculate and apply pressure
     for particle in particles:
-        particle.pressureF = calcpressureforce(particle)
-        particle.pressureA = particle.pressureF / particle.density
-        particle.velocity += particle.pressureA * dt
+        particle.pressureF = calcPressure(particle, particles, sim_settings)
+        if particle.density != 0:
+            particle.pressureA = [x / particle.density for x in particle.pressureF]
+        else:
+            particle.pressureA = particle.pressureF
+        particle.velocity += [x * dt for x in particle.pressureA]
 
     # Collisions
     for particle in particles:
-        particle.position +=velocity
+        particle.position += particle.velocity
 
-def smoothingker(radius, distance):
 
-# Update the rect position
-self.rect.center = (self.x, self.y)
+def smoothingKer(smoothingRadius, distance):
+    volume = math.pi * pow(smoothingRadius, 8) / 4
+    value = max(0, smoothingRadius ** 2 - distance ** 2)
+    return (value ** 3) / volume
+
+
+def smoothingKerd(smoothingRadius, distance):
+    if distance >= smoothingRadius:
+        return 0;
+    f = smoothingRadius ** 2 - smoothingRadius ** 2
+    scale = -24 / (math.pi * pow(smoothingRadius, 8))
+    return scale * distance * f * f
+
+
+def calcDensity(thisParticle, particles, sim_settings):
+    density = 0
+    mass = 1
+
+    for particle in particles:
+        if particle != thisParticle:
+            # Calculate the Euclidean distance between the particles
+            distance = math.sqrt(sum((a - b) ** 2 for a, b in zip(particle.position, thisParticle.position)))
+            influence = smoothingKer(sim_settings.smoothingRadius, distance)
+            density += mass * influence
+
+    return density
+
+
+def densityToPressure(density, sim_settings):
+    densityError = density - sim_settings.targetDensity
+    pressure = densityError * sim_settings.pressureMultiplier
+    return pressure
+
+
+def calcPressure(thisParticle, particles, sim_settings):
+    mass = 1
+    pressureForce = [0, 0]  # Assuming a 2D space; adjust if in 3D
+
+    for particle in particles:
+        if particle != thisParticle:
+            # Calculate offset vector and distance
+            offset = [a - b for a, b in zip(particle.position, thisParticle.position)]
+            distance = math.sqrt(sum(comp ** 2 for comp in offset))
+            if distance != 0:
+                # Normalize the offset vector to get the direction
+                direction = [comp / distance for comp in offset]
+            else:
+                # Random direction if distance is zero (handle zero distance case)
+                direction = [random.uniform(-1, 1) for _ in offset]
+                norm = math.sqrt(sum(comp ** 2 for comp in direction))
+                direction = [comp / norm for comp in direction]  # Normalize the random vector
+
+            slope = smoothingKerd(sim_settings.smoothingRadius, distance)
+            density = thisParticle.density
+            particle_density = particle.density
+            pressure = densityToPressure(density, sim_settings) + densityToPressure(particle_density, sim_settings)
+            force_contribution = [pressure * dir_comp * slope * (mass / density) for dir_comp in direction]
+            pressureForce = [f + fc for f, fc in zip(pressureForce, force_contribution)]
+
+    return pressureForce
+
+
 
 run_sim()
