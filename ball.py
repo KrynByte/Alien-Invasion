@@ -9,16 +9,21 @@ class Particle(Sprite):
         self.screen = screen
         self.color = (255, 255, 255)
         self.radius = sim_settings.ball_radius
-        self.position = sim_settings.start_position
+        self.position = [0, 0]
         self.velocity = [0, 0]
         self.prediction = [0, 0]
         self.pressureF = [0, 0]
 
-        dim = math.floor(i / 8)
-        for n in range(0, dim):
-            self.position[0] += sim_settings.ball_radius * 3
+        rowcount = sim_settings.screen_width // (sim_settings.ball_radius * 3)
 
-        self.position[0] += (i - (dim * 8)) * sim_settings.ball_radius * 3
+        # Calculate row and column indices
+        row = i // rowcount
+        col = i % rowcount
+
+        # Set position based on row and column
+        self.position[0] = (col * sim_settings.ball_radius * 3) + 10
+        self.position[1] = (row * sim_settings.ball_radius * 3) + 10
+        print(self.position)
 
         # Create an image of the ball, and set its rect attribute.
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius), pygame.SRCALPHA)
@@ -28,6 +33,5 @@ class Particle(Sprite):
 
     def update(self):
         # Update the rect position
-        print(self.position)
         self.rect.center = self.position
 

@@ -55,8 +55,9 @@ def run_sim():
 def step(dt, particles, sim_settings):
     # Apply Gravity
     for particle in particles:
-        particle.velocity += [x * dt for x in sim_settings.gravity]
-        particle.prediction = particle.position + [x * dt for x in particle.velocity]
+        # Assuming gravity is a list like [gx, gy] for 2D space
+        particle.velocity = [v + g * dt for v, g in zip(particle.velocity, sim_settings.gravity)]
+        particle.prediction = [pos + vel * dt for pos, vel in zip(particle.position, particle.velocity)]
 
     # Calculate density
     for particle in particles:
@@ -69,11 +70,15 @@ def step(dt, particles, sim_settings):
             particle.pressureA = [x / particle.density for x in particle.pressureF]
         else:
             particle.pressureA = particle.pressureF
-        particle.velocity += [x * dt for x in particle.pressureA]
+        particle.velocity = [v + pa * dt for v, pa in zip(particle.velocity, particle.pressureA)]
 
     # Collisions
     for particle in particles:
-        particle.position += particle.velocity
+        collision(particle, sim_settings)
+
+    # Update positions
+    for particle in particles:
+        particle.position = [p + v * dt for p, v in zip(particle.position, particle.velocity)]
 
 
 def smoothingKer(smoothingRadius, distance):
@@ -112,31 +117,48 @@ def densityToPressure(density, sim_settings):
 
 def calcPressure(thisParticle, particles, sim_settings):
     mass = 1
-    pressureForce = [0, 0]  # Assuming a 2D space; adjust if in 3D
+    pressureForce = [0, 0]  # Assuming a 2D space
 
     for particle in particles:
         if particle != thisParticle:
-            # Calculate offset vector and distance
             offset = [a - b for a, b in zip(particle.position, thisParticle.position)]
             distance = math.sqrt(sum(comp ** 2 for comp in offset))
             if distance != 0:
-                # Normalize the offset vector to get the direction
                 direction = [comp / distance for comp in offset]
             else:
-                # Random direction if distance is zero (handle zero distance case)
                 direction = [random.uniform(-1, 1) for _ in offset]
                 norm = math.sqrt(sum(comp ** 2 for comp in direction))
-                direction = [comp / norm for comp in direction]  # Normalize the random vector
+                direction = [comp / norm for comp in direction] if norm != 0 else [0, 0]
 
             slope = smoothingKerd(sim_settings.smoothingRadius, distance)
-            density = thisParticle.density
-            particle_density = particle.density
-            pressure = densityToPressure(density, sim_settings) + densityToPressure(particle_density, sim_settings)
-            force_contribution = [pressure * dir_comp * slope * (mass / density) for dir_comp in direction]
+            otherdensity = particle.density
+            particledensity = thisParticle.density
+            pressure = densityToPressure(otherdensity, sim_settings) + densityToPressure(particledensity, sim_settings)
+            force_contribution = [pressure * dir_comp * slope * mass / otherdensity for dir_comp in direction]
             pressureForce = [f + fc for f, fc in zip(pressureForce, force_contribution)]
 
     return pressureForce
 
+
+def collision(particle, sim_settings):
+    # Handle horizontal boundaries
+    if particle.position[0] - particle.radius <= 0:
+        particle.position[0] = particle.radius  # Adjust position to boundary
+        particle.velocity[0] = -particle.velocity[0] * 0.5  # Reverse and dampen velocity
+    elif particle.position[0] + particle.radius >= sim_settings.screen_width:
+        particle.position[0] = sim_settings.screen_width - particle.radius  # Adjust position to boundary
+        particle.velocity[0] = -particle.velocity[0] * 0.5  # Reverse and dampen velocity
+
+    # Handle vertical boundaries
+    if particle.position[1] - particle.radius <= 0:
+        particle.position[1] = particle.radius  # Adjust position to boundary
+        particle.velocity[1] = -particle.velocity[1] * 0.5  # Reverse and dampen velocity
+    elif particle.position[1] + particle.radius >= sim_settings.screen_height:
+        particle.position[1] = sim_settings.screen_height - particle.radius  # Adjust position to boundary
+        particle.velocity[1] = -particle.velocity[1] * 0.5  # Reverse and dampen velocity
+
+    # Return the updated particle (not necessary if you update in-place)
+    return particle
 
 
 run_sim()
