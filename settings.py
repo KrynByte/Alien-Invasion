@@ -12,5 +12,5 @@ class Settings():
         self.ball_color = (255, 255, 255)
         self.ball_radius = 5
         self.smoothingRadius = 100
-        self.targetDensity = 50
-        self.pressureMultiplier = 50
+        self.targetDensity = 0.5
+        self.pressureMultiplier = 0.5

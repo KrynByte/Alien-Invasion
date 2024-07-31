@@ -70,7 +70,7 @@ def step(dt, particles, sim_settings):
             particle.pressureA = [x / particle.density for x in particle.pressureF]
         else:
             particle.pressureA = particle.pressureF
-        particle.velocity = [v + pa * dt for v, pa in zip(particle.velocity, particle.pressureA)]
+        particle.velocity = [v + -pa * dt for v, pa in zip(particle.velocity, particle.pressureA)]
 
     # Collisions
     for particle in particles:
@@ -82,17 +82,17 @@ def step(dt, particles, sim_settings):
 
 
 def smoothingKer(smoothingRadius, distance):
-    volume = math.pi * pow(smoothingRadius, 8) / 4
-    value = max(0, smoothingRadius ** 2 - distance ** 2)
-    return (value ** 3) / volume
+    if distance >= smoothingRadius:
+        return 0
+    volume = math.pi * pow(smoothingRadius, 4) / 6
+    return (smoothingRadius - distance) ** 2 / volume
 
 
 def smoothingKerd(smoothingRadius, distance):
     if distance >= smoothingRadius:
-        return 0;
-    f = smoothingRadius ** 2 - smoothingRadius ** 2
-    scale = -24 / (math.pi * pow(smoothingRadius, 8))
-    return scale * distance * f * f
+        return 0
+    scale = 12 / (math.pi * pow(smoothingRadius, 4))
+    return scale * (distance - smoothingRadius)
 
 
 def calcDensity(thisParticle, particles, sim_settings):
@@ -106,7 +106,7 @@ def calcDensity(thisParticle, particles, sim_settings):
             influence = smoothingKer(sim_settings.smoothingRadius, distance)
             density += mass * influence
 
-    return density
+    return density + 0.000001
 
 
 def densityToPressure(density, sim_settings):
@@ -126,7 +126,7 @@ def calcPressure(thisParticle, particles, sim_settings):
             if distance != 0:
                 direction = [comp / distance for comp in offset]
             else:
-                direction = [random.uniform(-1, 1) for _ in offset]
+                direction = [random.uniform(-0.1, 0.1) for _ in offset]
                 norm = math.sqrt(sum(comp ** 2 for comp in direction))
                 direction = [comp / norm for comp in direction] if norm != 0 else [0, 0]
 

@@ -23,7 +23,6 @@ class Particle(Sprite):
         # Set position based on row and column
         self.position[0] = (col * sim_settings.ball_radius * 3) + 10
         self.position[1] = (row * sim_settings.ball_radius * 3) + 10
-        print(self.position)
 
         # Create an image of the ball, and set its rect attribute.
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius), pygame.SRCALPHA)
